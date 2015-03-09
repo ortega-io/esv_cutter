@@ -11,6 +11,7 @@
  * @author      Otoniel Ortega <ortega_x2@hotmail.com>
  * @copyright   2015 Otoniel Ortega (c)
  * @version     1.0
+ * @license     CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)
  * 
  */
 
@@ -18,19 +19,23 @@
 class CutA
 {
 
-	/* URL de la imagen del acta escaneada y paths */
+	/* Información sobre el acta */
 
 	private $urlActa;
 	private $acta;
 	private $jrv;
 	private $formato;
 	private $storePath;
+	private $tableWidth;
+	private $tableHeight;
+	private $baseMarginLeft;
+	private $baseMarginTop;
 
 
 	/* Sección de Conteo de Votos (cv) */
 	
-	private $cvLeftMargin;
-	private $cvTopMargin;
+	private $cvMarginLeft;
+	private $cvMarginTop;
 	private $cvConceptColumnWidth;
 	private $cvNumericColumnWidth;
 	private $cvTextualColumnWidth;
@@ -40,8 +45,8 @@ class CutA
 
 	/* Sección de Totales (st) */
 
-	private $stLeftMargin;
-	private $stTopMargin;
+	private $stMarginLeft;
+	private $stMarginTop;
 	private $stConceptColumnWidth;
 	private $stNumericColumnWidth;
 	private $stTextualColumnWidth;
@@ -62,20 +67,24 @@ class CutA
 
     public function __construct()
     {	
-
-		/* URL de la imagen del acta escaneada y paths */
+		
+		/* Información sobre el acta */
 
 		$this->urlActa				= null;
 		$this->acta					= null;
 		$this->jrv					= null;
 		$this->formato				= null;
 		$this->storePath			= null;
+		$this->tableWidth			= 3960;
+		$this->tableHeight			= 2185;
+		$this->baseMarginLeft 		= 0;
+		$this->baseMarginTop 		= 0;
 
-
+    	
     	/* Sección de Conteo de Votos (cv) */
 		
-		$this->cvLeftMargin			= 315;
-		$this->cvTopMargin			= 310;
+		$this->cvMarginLeft			= 220;
+		$this->cvMarginTop			= 125;
 		$this->cvConceptColumnWidth	= 279;
 		$this->cvNumericColumnWidth	= 285;
 		$this->cvTextualColumnWidth	= 475;
@@ -86,8 +95,8 @@ class CutA
 
 		/* Sección de Totales (st) */
 
-		$this->stLeftMargin			= 95;
-		$this->stTopMargin			= 2120;
+		$this->stMarginLeft			= 0;
+		$this->stMarginTop			= 1945;
 		$this->stConceptColumnWidth	= 490;
 		$this->stNumericColumnWidth	= 295;
 		$this->stTextualColumnWidth	= 475;
@@ -115,20 +124,84 @@ class CutA
     	$this->urlActa 	= $url;
     	$this->acta 	= imagecreatefrompng($url);
 
+
+        /* Detectar tipo de elección */
+
+        if(strpos($this->urlActa, '/actas/2/')!==false)
+        {
+            $type   = 'parlacen';
+        }
+        elseif(strpos($this->urlActa, '/actas/3/')!==false)
+        {
+            $type   = 'diputados';
+        }
+        elseif(strpos($this->urlActa, '/actas/5/')!==false)
+        {
+            $type   = 'alcaldes';
+        }
+
+    	/* Manejar rotaciones */
+
+		$imageWidth 	= ImageSX($this->acta);
+		$imageHeight 	= ImageSY($this->acta);
+
+		// Este formato debe ser horizontal //
+	   	if($imageHeight>$imageWidth) 
+    	{
+    		$this->acta = imagerotate($this->acta, 90, 0);
+    	}
+
+
     	$imageName 		= pathinfo($url, PATHINFO_FILENAME);
     	$imageNameData 	= explode('_', $imageName);
 
     	$this->jrv 		= $imageNameData[0].'_'.$imageNameData[1];
     	$this->formato	= $imageNameData[2];
     	
+        echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]\n";
     	
+
     	/* Crea los folderes correspondientes */
     	
-    	$this->storePath = "temp/{$this->jrv}/{$this->formato}";
+    	$this->storePath = "temp/{$this->jrv}/{$type}/{$this->formato}";
 
     	@mkdir("temp/{$this->jrv}/");
-    	@mkdir("temp/{$this->jrv}/{$this->formato}");
+        @mkdir("temp/{$this->jrv}/{$type}");
+    	@mkdir("temp/{$this->jrv}/{$type}/{$this->formato}");
 
+
+    	/* Detectar margenes y aplicar correciones */
+
+    	$edgeMapper 	= new EdgesMapper();
+    	$edges 			= $edgeMapper->getEdges($this->acta);
+
+    	if(isset($edges['horizontalTop']))
+    	{
+    		$this->baseMarginTop = $edges['horizontalTop'];
+    	}
+    	elseif(isset($edges['horizontalBottom']))
+    	{
+    		
+    		$estimatedTop 			= ($edges['horizontalBottom']-$this->tableHeight);
+			$this->baseMarginTop 	= ($estimatedTop>0) ? $estimatedTop : 0;
+    	}
+
+    	if(isset($edges['verticalLeft']))
+    	{
+    		$this->baseMarginLeft = $edges['verticalLeft'];
+    	}
+    	elseif(isset($edges['verticalRight']))
+    	{
+    		$estimatedLeft 			= ($edges['verticalRight']-$this->tableWidth);
+    		$this->baseMarginLeft 	= ($estimatedLeft>0) ? $estimatedLeft : 0;
+    	}
+
+    	/* Upadting */
+
+		$this->cvMarginLeft	+= $this->baseMarginLeft;
+		$this->cvMarginTop	+= $this->baseMarginTop;
+		$this->stMarginLeft	+= $this->baseMarginLeft;
+		$this->stMarginTop	+= $this->baseMarginTop;
 
     }
 
@@ -159,10 +232,10 @@ class CutA
 
     	/* Iterar todas las filas de la seccion */
 
-		$currentTop 	= $this->cvTopMargin;
-		$conceptLeft 	= $this->cvLeftMargin;
-		$numericLeft 	= $this->cvLeftMargin + $this->cvConceptColumnWidth;
-		$textualLeft 	= $this->cvLeftMargin + $this->cvConceptColumnWidth + $this->cvNumericColumnWidth;
+		$currentTop 	= $this->cvMarginTop;
+		$conceptLeft 	= $this->cvMarginLeft;
+		$numericLeft 	= $this->cvMarginLeft + $this->cvConceptColumnWidth;
+		$textualLeft 	= $this->cvMarginLeft + $this->cvConceptColumnWidth + $this->cvNumericColumnWidth;
 		$discounted 	= false;
 
     	for($row=1; $row<=$this->cvMaxRows; $row++)
@@ -241,10 +314,10 @@ class CutA
 
     	/* Iterar todas las filas de la seccion */
 
-		$currentTop 	= $this->stTopMargin;
-		$conceptLeft 	= $this->stLeftMargin;
-		$numericLeft 	= $this->stLeftMargin + $this->stConceptColumnWidth;
-		$textualLeft 	= $this->stLeftMargin + $this->stConceptColumnWidth + $this->stNumericColumnWidth;
+		$currentTop 	= $this->stMarginTop;
+		$conceptLeft 	= $this->stMarginLeft;
+		$numericLeft 	= $this->stMarginLeft + $this->stConceptColumnWidth;
+		$textualLeft 	= $this->stMarginLeft + $this->stConceptColumnWidth + $this->stNumericColumnWidth;
 		$discounted 	= false;
 
     	for($row=1; $row<=$this->stMaxRows; $row++)

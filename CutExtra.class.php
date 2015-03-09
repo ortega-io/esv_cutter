@@ -11,6 +11,7 @@
  * @author      Otoniel Ortega <ortega_x2@hotmail.com>
  * @copyright   2015 Otoniel Ortega (c)
  * @version     1.0
+ * @license 	CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)
  * 
  */
 
@@ -25,6 +26,10 @@ class CutExtra
 	private $jrv;
 	private $formato;
 	private $storePath;
+	private $tableWidth;
+	private $tableHeight;
+	private $baseMarginLeft;
+	private $baseMarginTop;
 
 
 	/* Sección de entidades (partido politico) (e)  */
@@ -48,8 +53,8 @@ class CutExtra
 	
 	/* Lado (a) = Lado izquierdo de acta */
 
-	private $cvaLeftMargin;
-	private $cvaTopMargin;
+	private $cvaMarginLeft;
+	private $cvaMarginTop;
 	private $cvaConceptColumnWidth;
 	private $cvaNumericColumnWidth;
 	private $cvaTextualColumnWidth;
@@ -58,8 +63,8 @@ class CutExtra
 
 	/* Lado (b) = Lado izquierdo de acta */
 
-	private $cvbLeftMargin;
-	private $cvbTopMargin;
+	private $cvbMarginLeft;
+	private $cvbMarginTop;
 	private $cvbConceptColumnWidth;
 	private $cvbNumericColumnWidth;
 	private $cvbTextualColumnWidth;
@@ -89,21 +94,25 @@ class CutExtra
 		$this->jrv					= null;
 		$this->formato				= null;
 		$this->storePath			= null;
+		$this->tableWidth			= 2345;
+		$this->tableHeight			= 3965;
+		$this->baseMarginLeft 		= 0;
+		$this->baseMarginTop 		= 0;
 
 
 		/* Sección de entidades (partido politico) (e) */
 
 		/* Lado (a) = Lado izquierdo de acta */
 
-		$this->eaMarginLeft		= 120;
-		$this->eaMarginTop		= 325;
+		$this->eaMarginLeft		= 0;
+		$this->eaMarginTop		= 135;
 		$this->eaWidth			= 1515;
 		$this->eaHeight			= 65;
 		
 		/* Lado (b) = Lado derecho de acta  */
 
-		$this->ebMarginLeft		= 1645;
-		$this->ebMarginTop		= 325;
+		$this->ebMarginLeft		= 1525;
+		$this->ebMarginTop		= 135;
 		$this->ebWidth			= 1505;
 		$this->ebHeight			= 65;
 
@@ -112,18 +121,19 @@ class CutExtra
 		
 		/* Lado (a) = Lado izquierdo de acta */
 
-		$this->cvaLeftMargin			= 200;
-		$this->cvaTopMargin				= 405;
+		$this->cvaMarginLeft			= 75;
+		$this->cvaMarginTop				= 210;
 		$this->cvaConceptColumnWidth	= 645;
 		$this->cvaNumericColumnWidth	= 305;
 		$this->cvaTextualColumnWidth	= 490;
 		$this->cvaRowHeight				= 80;
 		$this->cvaMaxRows				= 26;
 
+
 		/* Lado (b) = Lado izquierdo de acta */
 
-		$this->cvbLeftMargin			= 1735;
-		$this->cvbTopMargin				= 405;
+		$this->cvbMarginLeft			= 1610;
+		$this->cvbMarginTop				= 210;
 		$this->cvbConceptColumnWidth	= 640;
 		$this->cvbNumericColumnWidth	= 300;
 		$this->cvbTextualColumnWidth	= 480;
@@ -151,21 +161,89 @@ class CutExtra
     	$this->urlActa 	= $url;
     	$this->acta 	= imagecreatefrompng($url);
 
+        
+        /* Detectar tipo de elección */
+
+        if(strpos($this->urlActa, '/actas/2/')!==false)
+        {
+            $type   = 'parlacen';
+        }
+        elseif(strpos($this->urlActa, '/actas/3/')!==false)
+        {
+            $type   = 'diputados';
+        }
+        elseif(strpos($this->urlActa, '/actas/5/')!==false)
+        {
+            $type   = 'alcaldes';
+        }
+
+
+    	/* Manejar rotaciones */
+
+		$imageWidth 	= ImageSX($this->acta);
+		$imageHeight 	= ImageSY($this->acta);
+
+		// Este formato debe ser horizontal //
+	   	if($imageHeight>$imageWidth) 
+    	{
+    		$this->acta = imagerotate($this->acta, 90, 0);
+    	}
+
+
     	$imageName 		= pathinfo($url, PATHINFO_FILENAME);
     	$imageNameData 	= explode('_', $imageName);
 
     	$this->jrv 		= $imageNameData[0].'_'.$imageNameData[1];
     	$this->formato	= $imageNameData[2];
     	
+    	echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]\n";
+
     	
     	/* Crea los folderes correspondientes */
     	
-    	$this->storePath = "temp/{$this->jrv}/{$this->formato}";
-
-		echo "EXTRA: $this->storePath \n";
+    	$this->storePath = "temp/{$this->jrv}/{$type}/{$this->formato}";
 
     	@mkdir("temp/{$this->jrv}/");
-    	@mkdir("temp/{$this->jrv}/{$this->formato}");
+    	@mkdir("temp/{$this->jrv}/{$type}");
+    	@mkdir("temp/{$this->jrv}/{$type}/{$this->formato}");
+
+
+    	/* Detectar margenes y aplicar correciones */
+
+    	$edgeMapper 	= new EdgesMapper();
+    	$edges 			= $edgeMapper->getEdges($this->acta);
+
+    	if(isset($edges['horizontalTop']))
+    	{
+    		$this->baseMarginTop = $edges['horizontalTop'];
+    	}
+    	elseif(isset($edges['horizontalBottom']))
+    	{
+    		
+    		$estimatedTop 			= ($edges['horizontalBottom']-$this->tableHeight);
+			$this->baseMarginTop 	= ($estimatedTop>0) ? $estimatedTop : 0;
+    	}
+
+    	if(isset($edges['verticalLeft']))
+    	{
+    		$this->baseMarginLeft = $edges['verticalLeft'];
+    	}
+    	elseif(isset($edges['verticalRight']))
+    	{
+    		$estimatedLeft 			= ($edges['verticalRight']-$this->tableWidth);
+    		$this->baseMarginLeft 	= ($estimatedLeft>0) ? $estimatedLeft : 0;
+    	}
+
+    	/* Upadting */
+
+		$this->eaMarginTop	+= $this->baseMarginTop;
+		$this->eaMarginLeft	+= $this->baseMarginLeft;
+		$this->ebMarginTop	+= $this->baseMarginTop;
+		$this->ebMarginLeft	+= $this->baseMarginLeft;
+		$this->cvaMarginLeft+= $this->baseMarginLeft;
+		$this->cvaMarginTop += $this->baseMarginTop;
+		$this->cvbMarginLeft+= $this->baseMarginLeft;
+		$this->cvbMarginTop += $this->baseMarginTop;
 
 
     }
@@ -201,17 +279,17 @@ class CutExtra
     	
     	/* Lado (a) = Lado izquierdo de acta */
 
-		$currentTopA 	= $this->cvaTopMargin;
-		$conceptLeftA 	= $this->cvaLeftMargin;
-		$numericLeftA 	= $this->cvaLeftMargin + $this->cvaConceptColumnWidth;
-		$textualLeftA 	= $this->cvaLeftMargin + $this->cvaConceptColumnWidth + $this->cvaNumericColumnWidth;
+		$currentTopA 	= $this->cvaMarginTop;
+		$conceptLeftA 	= $this->cvaMarginLeft;
+		$numericLeftA 	= $this->cvaMarginLeft + $this->cvaConceptColumnWidth;
+		$textualLeftA 	= $this->cvaMarginLeft + $this->cvaConceptColumnWidth + $this->cvaNumericColumnWidth;
 		
     	/* Lado (b) = Lado derecho de acta */
 
-		$currentTopB 	= $this->cvbTopMargin;
-		$conceptLeftB 	= $this->cvbLeftMargin;
-		$numericLeftB 	= $this->cvbLeftMargin + $this->cvbConceptColumnWidth;
-		$textualLeftB 	= $this->cvbLeftMargin + $this->cvbConceptColumnWidth + $this->cvbNumericColumnWidth;
+		$currentTopB 	= $this->cvbMarginTop;
+		$conceptLeftB 	= $this->cvbMarginLeft;
+		$numericLeftB 	= $this->cvbMarginLeft + $this->cvbConceptColumnWidth;
+		$textualLeftB 	= $this->cvbMarginLeft + $this->cvbConceptColumnWidth + $this->cvbNumericColumnWidth;
 
 		$discounted 	= false;
 
