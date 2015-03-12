@@ -158,7 +158,7 @@ class CutA
     	$this->jrv 		= $imageNameData[0].'_'.$imageNameData[1];
     	$this->formato	= $imageNameData[2];
     	
-        echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]\n";
+        echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]... ";
     	
 
     	/* Crea los folderes correspondientes */
@@ -284,6 +284,7 @@ class CutA
 
     	}
 
+        echo "[DONE]\n";
     }
 
 

@@ -30,6 +30,7 @@ class CutExtra
 	private $tableHeight;
 	private $baseMarginLeft;
 	private $baseMarginTop;
+	private $entityScan;
 
 
 	/* Sección de entidades (partido politico) (e)  */
@@ -98,6 +99,7 @@ class CutExtra
 		$this->tableHeight			= 3965;
 		$this->baseMarginLeft 		= 0;
 		$this->baseMarginTop 		= 0;
+		$this->entityScan 			= false;
 
 
 		/* Sección de entidades (partido politico) (e) */
@@ -106,14 +108,14 @@ class CutExtra
 
 		$this->eaMarginLeft		= 0;
 		$this->eaMarginTop		= 135;
-		$this->eaWidth			= 1515;
+		$this->eaWidth			= 1430;
 		$this->eaHeight			= 65;
 		
 		/* Lado (b) = Lado derecho de acta  */
 
 		$this->ebMarginLeft		= 1525;
 		$this->ebMarginTop		= 135;
-		$this->ebWidth			= 1505;
+		$this->ebWidth			= 1430;
 		$this->ebHeight			= 65;
 
 
@@ -122,7 +124,7 @@ class CutExtra
 		/* Lado (a) = Lado izquierdo de acta */
 
 		$this->cvaMarginLeft			= 75;
-		$this->cvaMarginTop				= 210;
+		$this->cvaMarginTop				= 135;
 		$this->cvaConceptColumnWidth	= 645;
 		$this->cvaNumericColumnWidth	= 305;
 		$this->cvaTextualColumnWidth	= 490;
@@ -133,7 +135,7 @@ class CutExtra
 		/* Lado (b) = Lado izquierdo de acta */
 
 		$this->cvbMarginLeft			= 1610;
-		$this->cvbMarginTop				= 210;
+		$this->cvbMarginTop				= 135;
 		$this->cvbConceptColumnWidth	= 640;
 		$this->cvbNumericColumnWidth	= 300;
 		$this->cvbTextualColumnWidth	= 480;
@@ -196,7 +198,16 @@ class CutExtra
     	$this->jrv 		= $imageNameData[0].'_'.$imageNameData[1];
     	$this->formato	= $imageNameData[2];
     	
-    	echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]\n";
+    	
+    	/* Define si es necesario buscar entidades */
+
+    	if( ($this->formato=='B') && (strpos($url, 'san_salvador')===false) )
+    	{
+    		echo ">> Requires entityScan\n";
+    		$this->entityScan = true;
+    	}
+
+    	echo "> Procesando JRV: [{$this->jrv}] \t Tipo: [{$type}] \t Formato: [{$this->formato}]... ";
 
     	
     	/* Crea los folderes correspondientes */
@@ -263,10 +274,13 @@ class CutExtra
     public function getConteo()
     {	
 
-    	$conteo = array();
+    	$conteo 		= array();
+		$edgeMapper 	= new EdgesMapper();
+
 
     	/* Crear directorios */
-
+    	@mkdir("{$this->storePath}/entities_a/");
+    	@mkdir("{$this->storePath}/entities_b/");
     	@mkdir("{$this->storePath}/count_concept_a/");
     	@mkdir("{$this->storePath}/count_numeric_a/");
     	@mkdir("{$this->storePath}/count_textual_a/");
@@ -306,6 +320,62 @@ class CutExtra
     		$tempConceptImgB 		= imagecreatetruecolor($this->cvbConceptColumnWidth, $this->cvbRowHeight);
     		$tempNumericImgB 		= imagecreatetruecolor($this->cvbNumericColumnWidth, $this->cvbRowHeight);
     		$tempTextualImgB 		= imagecreatetruecolor($this->cvbTextualColumnWidth, $this->cvbRowHeight);
+
+
+
+    		// Extrar entidades [START] ===================================== //
+    		// ============================================================== //
+
+
+			/* Detectar si el fragmento es una entidad */
+			
+			if($this->entityScan)
+			{
+
+		    	$blankSpaceA	= $edgeMapper->blankSpace($this->acta, $conceptLeftA, $currentTopA, $this->cvaConceptColumnWidth, $this->cvaRowHeight, $row);
+		    	$blankSpaceB	= $edgeMapper->blankSpace($this->acta, $conceptLeftB, $currentTopB, $this->cvaConceptColumnWidth, $this->cvaRowHeight, $row);
+
+			}
+			elseif($row==1)
+			{
+
+		    	$blankSpaceA	= $edgeMapper->blankSpace($this->acta, $conceptLeftA, $currentTopA, $this->cvaConceptColumnWidth, $this->cvaRowHeight, $row);
+		    	$blankSpaceB	= $edgeMapper->blankSpace($this->acta, $conceptLeftB, $currentTopB, $this->cvaConceptColumnWidth, $this->cvaRowHeight, $row);
+
+			}
+
+
+			if($blankSpaceA)
+			{
+				$tempEntityImgA 		= imagecreatetruecolor($this->eaWidth, $this->eaHeight);
+
+				imagecopy($tempEntityImgA, $this->acta, 0, 0, $conceptLeftA, $currentTopA, $this->eaWidth, $this->eaHeight);	
+				imagejpeg($tempEntityImgA, "{$this->storePath}/entities_a/row_{$row}.jpg");
+
+				$blankSpaceA 			= false;
+			}
+
+			if($blankSpaceB)
+			{
+				$tempEntityImgB 		= imagecreatetruecolor($this->ebWidth, $this->ebHeight);
+
+				imagecopy($tempEntityImgB, $this->acta, 0, 0, $conceptLeftB, $currentTopB, $this->ebWidth, $this->ebHeight);
+				imagejpeg($tempEntityImgB, "{$this->storePath}/entities_b/row_{$row}.jpg");
+
+				$blankSpaceB 			= false;
+
+			}
+   			
+
+   			/* Generar las imagenes temporales de destino */
+
+    		
+    		$tempConceptImgB 		= imagecreatetruecolor($this->cvbConceptColumnWidth, $this->cvbRowHeight);
+
+
+			// Extrar entidades [END] ======================================= //
+    		// ============================================================== //
+
 
 
     		/* Extraer el fragmento correspondiente a cada campo */
@@ -359,6 +429,8 @@ class CutExtra
 
     	}
 
+    	echo "[DONE]\n";
+    	
     }
 
 

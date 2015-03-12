@@ -189,6 +189,114 @@ class EdgesMapper
 
 
 
+    /**
+    * ----------------------------------------------------
+    *   blankSpace($acta, $x, $y, $width, $height)
+    * ----------------------------------------------------
+    * 
+    * Devuelve el porcentaje de espacio en blanco estimado en el recuadro.
+    * 
+    * @param IMAGE_RESOURCE $acta
+    * @param int $x
+    * @param int $y
+    * @param int $width
+    * @param int $height
+    * 
+    * return float $percentage
+    */
+
+	function blankSpace($acta, $x, $y, $width, $height, $row)
+	{
+
+		$activePixels 	= array();
+		$yStart			= $y + ceil($height*0.25);
+		$xLeft			= $x + ceil($width*0.05);
+		$xCenter		= $x + ceil($width*0.18);
+		$xLimitLeft		= ($xLeft+45);
+		$yLimitLeft		= ($yStart+35);
+		$xLimitCenter	= ($xCenter+65);
+		$yLimitCenter	= ($yStart+35);
+
+
+		/* Determinar espacio en blanco en recuadro izquierdo  */
+		/* Nota: Los nombres estan alineados a la izquierda... */
+
+		for($x=$xLeft; $x<=$xLimitLeft; $x++)
+		{
+				
+			for($y=$yStart; $y<=$yLimitLeft; $y++)
+			{
+
+				$rgb 	= imagecolorat($acta, $x, $y);
+				
+				$r 		= ($rgb >> 16) & 0xFF;
+				$g 		= ($rgb >> 8) & 0xFF;
+				$b 		= $rgb & 0xFF;
+
+				if(($r+$g+$b)==0)
+				{
+					$activePixels[]	= 1;
+				}
+				else
+				{
+					$activePixels[]	= 0;
+				}
+
+			}
+		}
+
+		$totalBlack 	= array_sum($activePixels);
+		$totalCells 	= count($activePixels);
+		$blankSpaceLeft	= ceil((1 - ($totalBlack/$totalCells))*100);
+
+
+
+		/* Determinar espacio en blanco en recuadro central  */
+		/* Nota: Las lineas punteadas estan centradas... */
+
+		for($x=$xLeft; $x<=$xLimitCenter; $x++)
+		{
+				
+			for($y=$yStart; $y<=$yLimitCenter; $y++)
+			{
+
+				$rgb 	= imagecolorat($acta, $x, $y);
+				
+				$r 		= ($rgb >> 16) & 0xFF;
+				$g 		= ($rgb >> 8) & 0xFF;
+				$b 		= $rgb & 0xFF;
+
+				if(($r+$g+$b)==0)
+				{
+					$activePixels[]	= 1;
+				}
+				else
+				{
+					$activePixels[]	= 0;
+				}
+
+			}
+		}
+
+		$totalBlack 	= array_sum($activePixels);
+		$totalCells 	= count($activePixels);
+		$blankSpaceCore = ceil((1 - ($totalBlack/$totalCells))*100);
+
+
+		/* Determinar si el recuadro contiene una entidad */
+		/* Entidad = Partido politico 					  */
+
+		if( ($blankSpaceLeft>=99) && ($blankSpaceCore>=99))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+
+	}
+
 }
 
 

@@ -16,10 +16,22 @@
  * 
  */
 
+include('ErrorHandler.php');
 include('CutA.class.php');
 include('CutADetails.class.php');
 include('CutExtra.class.php');
 include('EdgesMapper.class.php');
+
+
+/* ========= [Parametros de JRV] =========== */
+
+$departamento	= 'san_salvador';
+$municipio		= 'soyapango';
+$centro			= 'centro_escolar_colon';
+$jrv 			= '01415';
+
+/* ========================================= */
+
 
 
 // Cortando papeletas [PARLACEN] =================================== */
@@ -28,16 +40,17 @@ include('EdgesMapper.class.php');
 /* Cortando papeletas formato A ==================================== */
 
 $cutA = new CutA();
-$cutA->setActa('http://elecciones2015.tse.gob.sv/actas/actas/2/san_salvador/soyapango/centro_escolar_colon/jrv_01415_A.png');
+$cutA->setActa("http://elecciones2015.tse.gob.sv/actas/actas/2/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_A.png");
 
 $cutA->getConteo();
 $cutA->getTotales();
 
 
+
 /* Cortando papeletas formato A1-A8 ================================ */
 
 $cutA1 = new CutADetails();
-$cutA1->setActa('http://elecciones2015.tse.gob.sv/actas/actas/2/san_salvador/soyapango/centro_escolar_colon/jrv_01415_A1.png');
+$cutA1->setActa("http://elecciones2015.tse.gob.sv/actas/actas/2/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_A1.png");
 
 $cutA1->getConteo();
 
@@ -45,7 +58,7 @@ $cutA1->getConteo();
 /* Cortando papeletas formato B-F ================================== */
 
 $cutB = new CutExtra();
-$cutB->setActa('http://elecciones2015.tse.gob.sv/actas/actas/2/san_salvador/soyapango/centro_escolar_colon/jrv_01415_B.png');
+$cutB->setActa("http://elecciones2015.tse.gob.sv/actas/actas/2/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_B.png");
 
 $cutB->getConteo();
 
@@ -57,7 +70,7 @@ $cutB->getConteo();
 /* Cortando papeletas formato A ==================================== */
 
 $cutA = new CutA();
-$cutA->setActa('http://elecciones2015.tse.gob.sv/actas/actas/3/san_salvador/soyapango/centro_escolar_colon/jrv_01415_A.png');
+$cutA->setActa("http://elecciones2015.tse.gob.sv/actas/actas/3/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_A.png");
 
 $cutA->getConteo();
 $cutA->getTotales();
@@ -66,7 +79,7 @@ $cutA->getTotales();
 /* Cortando papeletas formato A1-A8 ================================ */
 
 $cutA1 = new CutADetails();
-$cutA1->setActa('http://elecciones2015.tse.gob.sv/actas/actas/3/san_salvador/soyapango/centro_escolar_colon/jrv_01415_A1.png');
+$cutA1->setActa("http://elecciones2015.tse.gob.sv/actas/actas/3/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_A1.png");
 
 $cutA1->getConteo();
 
@@ -74,7 +87,7 @@ $cutA1->getConteo();
 /* Cortando papeletas formato B-F ================================== */
 
 $cutB = new CutExtra();
-$cutB->setActa('http://elecciones2015.tse.gob.sv/actas/actas/3/san_salvador/soyapango/centro_escolar_colon/jrv_01415_B.png');
+$cutB->setActa("http://elecciones2015.tse.gob.sv/actas/actas/3/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_B.png");
 
 $cutB->getConteo();
 
@@ -86,7 +99,7 @@ $cutB->getConteo();
 /* Cortando papeletas formato A ==================================== */
 
 $cutA = new CutA();
-$cutA->setActa('http://elecciones2015.tse.gob.sv/actas/actas/5/san_salvador/soyapango/centro_escolar_colon/jrv_01415_A.png');
+$cutA->setActa("http://elecciones2015.tse.gob.sv/actas/actas/5/{$departamento}/{$municipio}/{$centro}/jrv_{$jrv}_A.png");
 
 $cutA->getConteo();
 $cutA->getTotales();
