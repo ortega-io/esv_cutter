@@ -1,6 +1,6 @@
 # esv_cutter
 
-Scripts from *citizens' initiative* to cut counting records documents for Salvadorean Elections.
+Scripts from **citizens' initiative** to cut counting records documents for Salvadorean Elections.
 
 
 Sample results: [Download here](https://www.dropbox.com/s/2qugxn93q3f69n3/jrv_01415.zip?dl=0) 
